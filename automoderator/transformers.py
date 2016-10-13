@@ -13,19 +13,17 @@ class DatetimeToTimestamp(TransformerMixin):
     """
     Convert datetime to seconds since epoch (seconds since 1970-01-01T00:00:00)
     """
-    def __init__(self, *args, **kwargs):
-        self._dt_func = lambda x: x.timestamp()
-        self._nd_func = lambda x: (x.astype('datetime64[s]') - dt64(0, 's')) / \
-                            td64(1, 's')
-
     def fit(self, X, y=None, **fit_params):
         return self
 
     def transform(self, X, y=None, value='days', *args, **kwargs):
         if isinstance(X, DataFrame):
-            return X.applymap(self._dt_func)
+            dt_func = lambda x: x.timestamp()
+            return X.applymap(dt_func)
         elif isinstance(X, np.ndarray):
-            return self._nd_func(X)
+            nd_func = lambda x: (x.astype('datetime64[s]') - dt64(0, 's')) / \
+                            td64(1, 's')
+            return nd_func(X)
         else:
             raise TypeError("DatetimeToTimestamp requires DataFrame or ndarray "
                             "(not {})".format(type(X)))
@@ -36,51 +34,47 @@ class DatetimeToValue(TransformerMixin):
     Extract a second, minute, hour, day, month, or year value from a dataframe
     containing datetime objects.)
     """
-    def __init__(self, value='days'):
-        """
-        Compile the lambda functions for extracting the appropriate value
-        from a DataFrame or ndarray
-        """
+    def fit(self, X, y=None, **fit_params):
+        return self
+
+    def transform(self, X, y=None, value='days', *args, **kwargs):
+        ## Compile the lambda functions for extracting the appropriate value
+        # from a DataFrame or ndarray
         if value in {'seconds', 'second', 's'}:
-            self._df_func = lambda x: x.second
-            self._np_func = lambda x: (x.astype('datetime64[s]') -
+            df_func = lambda x: x.second
+            np_func = lambda x: (x.astype('datetime64[s]') -
                              x.astype('datetime64[m]')) / td64(1, 's')
         elif value in {'minutes', 'minute', 'm'}:
-            self._df_func = lambda x: x.minute
-            self._np_func = lambda x: (x.astype('datetime64[m]') -
+            df_func = lambda x: x.minute
+            np_func = lambda x: (x.astype('datetime64[m]') -
                              x.astype('datetime64[h]')) / td64(1, 'm')
         elif value in {'hours', 'hour', 'h'}:
-            self._df_func = lambda x: x.hour
-            self._np_func = lambda x: (x.astype('datetime64[h]') -
+            df_func = lambda x: x.hour
+            np_func = lambda x: (x.astype('datetime64[h]') -
                              x.astype('datetime64[D]')) / td64(1, 'h')
         elif value in {'days', 'day', 'd'}:
-            self._df_func = lambda x: x.day
-            self._np_func = lambda x: (x.astype('datetime64[D]') -
+            df_func = lambda x: x.day
+            np_func = lambda x: (x.astype('datetime64[D]') -
                              x.astype('datetime64[M]') + td64(1, 'D')) / \
                 td64(1, 'D')
         elif value in {'months', 'month', 'M'}:
-            self._df_func = lambda x: x.month
-            self._np_func = lambda x: (x.astype('datetime64[M]') -
+            df_func = lambda x: x.month
+            np_func = lambda x: (x.astype('datetime64[M]') -
                              x.astype('datetime64[Y]') + td64(1, 'M')) / \
                 td64(1, 'M')
         elif value in {'years', 'year', 'y'}:
-            self._df_func = lambda x: x.year
-            self._np_func = lambda x: (x.astype('datetime64[Y]') -
+            df_func = lambda x: x.year
+            np_func = lambda x: (x.astype('datetime64[Y]') -
                              dt64('0', 'Y')) / td64(1, 'Y')
         else:
             raise ValueError("value must be one of ['seconds', 'minutes', "
                              "'hours', 'days', 'years'] (not '{}')"
                              .format(value))
-        # self._np_func = np.vectorize(npf, otypes=[np.int])
 
-    def fit(self, X, y=None, **fit_params):
-        return self
-
-    def transform(self, X, y=None, value='days', *args, **kwargs):
         if isinstance(X, DataFrame):
-            return X.applymap(self._df_func)
+            return X.applymap(df_func)
         elif isinstance(X, np.ndarray):
-            return self._np_func(X)
+            return np_func(X)
         else:
             raise TypeError("DatetimeToValue requires DataFrame or ndarray (not"
                             "{})".format(type(X)))
