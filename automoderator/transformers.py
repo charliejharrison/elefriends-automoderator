@@ -16,7 +16,7 @@ class DatetimeToTimestamp(TransformerMixin):
     def fit(self, X, y=None, **fit_params):
         return self
 
-    def transform(self, X, y=None, value='days', *args, **kwargs):
+    def transform(self, X, y=None, *args, **kwargs):
         if isinstance(X, DataFrame):
             dt_func = lambda x: x.timestamp()
             return X.applymap(dt_func)
@@ -34,42 +34,45 @@ class DatetimeToValue(TransformerMixin):
     Extract a second, minute, hour, day, month, or year value from a dataframe
     containing datetime objects.)
     """
+    def __init__(self, value='days'):
+        self.value = value
+
     def fit(self, X, y=None, **fit_params):
         return self
 
-    def transform(self, X, y=None, value='days', *args, **kwargs):
+    def transform(self, X, y=None, *args, **kwargs):
         ## Compile the lambda functions for extracting the appropriate value
         # from a DataFrame or ndarray
-        if value in {'seconds', 'second', 's'}:
+        if self.value in {'seconds', 'second', 's'}:
             df_func = lambda x: x.second
             np_func = lambda x: (x.astype('datetime64[s]') -
                              x.astype('datetime64[m]')) / td64(1, 's')
-        elif value in {'minutes', 'minute', 'm'}:
+        elif self.value in {'minutes', 'minute', 'm'}:
             df_func = lambda x: x.minute
             np_func = lambda x: (x.astype('datetime64[m]') -
                              x.astype('datetime64[h]')) / td64(1, 'm')
-        elif value in {'hours', 'hour', 'h'}:
+        elif self.value in {'hours', 'hour', 'h'}:
             df_func = lambda x: x.hour
             np_func = lambda x: (x.astype('datetime64[h]') -
                              x.astype('datetime64[D]')) / td64(1, 'h')
-        elif value in {'days', 'day', 'd'}:
+        elif self.value in {'days', 'day', 'd'}:
             df_func = lambda x: x.day
             np_func = lambda x: (x.astype('datetime64[D]') -
                              x.astype('datetime64[M]') + td64(1, 'D')) / \
                 td64(1, 'D')
-        elif value in {'months', 'month', 'M'}:
+        elif self.value in {'months', 'month', 'M'}:
             df_func = lambda x: x.month
             np_func = lambda x: (x.astype('datetime64[M]') -
                              x.astype('datetime64[Y]') + td64(1, 'M')) / \
                 td64(1, 'M')
-        elif value in {'years', 'year', 'y'}:
+        elif self.value in {'years', 'year', 'y'}:
             df_func = lambda x: x.year
             np_func = lambda x: (x.astype('datetime64[Y]') -
                              dt64('0', 'Y')) / td64(1, 'Y')
         else:
             raise ValueError("value must be one of ['seconds', 'minutes', "
                              "'hours', 'days', 'years'] (not '{}')"
-                             .format(value))
+                             .format(self.value))
 
         if isinstance(X, DataFrame):
             return X.applymap(df_func)

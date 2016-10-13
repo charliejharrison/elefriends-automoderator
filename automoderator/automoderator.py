@@ -39,7 +39,7 @@ def main(verbose=False):
         (['datetime', 'date_joined'], DatetimeToTimestamp()),
         (
             ['date_joined', 'datetime'],
-            [DatetimeToTimestamp('timestamp'), ColumnDifference()]
+            [DatetimeToTimestamp(), ColumnDifference()]
         ),
         ('datetime', [DatetimeToValue('hours'), Cosine()]),
         ('content_body', CountVectorizer()),
