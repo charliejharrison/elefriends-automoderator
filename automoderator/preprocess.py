@@ -64,7 +64,8 @@ def load_data(path='../data/features.01.csv', labels=None,
     ##TODO: set this up as a Transformer to allow experimenting with
     # alternative null classes, multilabel, etc.
 
-    data_types = {'removed': bool,
+    data_types = {'content_body': str,
+                  'removed': bool,
                   'removed_user': bool,
                   'removed_moderator': bool}
 
@@ -73,6 +74,9 @@ def load_data(path='../data/features.01.csv', labels=None,
                     true_values=['t'],
                     false_values=['f'],
                     parse_dates=['datetime', 'date_joined'])
+
+    # Replace NaN in content_body with empty string
+    data['content_body'] = data['content_body'].fillna('')
 
     # Filter out content types
     cts = ['Message', 'Comment', 'Post']
